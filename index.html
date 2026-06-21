@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="theme-color" content="#0A0A0F"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="HuntAI"/>
+<meta name="description" content="AI-powered job hunt agent — resume analysis, JD alignment, application tracker"/>
+<title>HuntAI — Job Hunt Agent</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icons/icon-192.png"/>
+<link rel="icon" type="image/png" href="icons/icon-192.png"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0A0A0F;--sur:#13131A;--sur2:#1C1C26;--bdr:#2A2A38;--bdr2:#3A3A50;
+  --acc:#6C63FF;--acc2:#9B96FF;--glow:rgba(108,99,255,0.15);
+  --tx:#F0EFFF;--tx2:#9090B0;--tx3:#5A5A7A;
+  --grn:#4ADE80;--amb:#FBBF24;--red:#F87171;--blu:#60A5FA;--pur:#A78BFA;
+  --r:10px;--rl:14px;
+}
+html,body{height:100%;overflow:hidden;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--tx);font-size:14px;line-height:1.6;}
+.app{display:flex;height:100vh;height:100dvh;}
+/* Sidebar */
+.sidebar{width:220px;background:var(--sur);border-right:1px solid var(--bdr);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;}
+.logo{padding:1.25rem;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--bdr);}
+.logo-icon{width:34px;height:34px;border-radius:9px;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.logo-name{font-size:16px;font-weight:700;letter-spacing:-.3px;}
+.logo-tag{font-size:10px;color:var(--tx3);}
+.nav-sec{padding:.75rem .75rem .25rem;}
+.nav-lbl{font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--tx3);text-transform:uppercase;padding:.25rem .5rem .5rem;}
+.ni{display:flex;align-items:center;gap:9px;padding:.5rem .75rem;border-radius:8px;cursor:pointer;color:var(--tx2);font-size:13px;border:none;background:none;width:100%;text-align:left;transition:all .15s;}
+.ni:hover{background:var(--sur2);color:var(--tx);}
+.ni.on{background:var(--glow);color:var(--acc2);}
+.ni i{font-size:17px;width:20px;text-align:center;}
+.nbadge{margin-left:auto;background:var(--acc);color:#fff;font-size:10px;padding:1px 7px;border-radius:20px;font-weight:700;display:none;}
+.api-bar{margin:.75rem;padding:.75rem;background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--r);font-size:12px;color:var(--tx2);}
+.adot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;background:var(--red);vertical-align:middle;}
+.adot.ok{background:var(--grn);}
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+.mhdr{padding:.875rem 1.5rem;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.ptitle{font-size:15px;font-weight:600;}
+.hacts{display:flex;gap:8px;}
+.pages{flex:1;overflow-y:auto;padding:1.25rem 1.5rem;}
+/* Buttons */
+.btn{padding:7px 13px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--bdr2);background:var(--sur);color:var(--tx2);transition:all .15s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
+.btn:hover{border-color:var(--acc);color:var(--tx);}
+.bp{background:var(--acc);border-color:var(--acc);color:#fff!important;}
+.bp:hover{background:#7B72FF;border-color:#7B72FF;}
+.bd{border-color:var(--red);color:var(--red);}
+.bs{padding:5px 10px;font-size:12px;}
+/* Pages */
+.page{display:none;animation:fi .18s ease;}
+.page.on{display:block;}
+@keyframes fi{from{opacity:0;transform:translateY(3px);}to{opacity:1;transform:none;}}
+/* Cards */
+.card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--rl);padding:1rem 1.25rem;margin-bottom:10px;transition:border-color .15s;}
+.card:hover{border-color:var(--bdr2);}
+/* Metrics */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin-bottom:1.25rem;}
+.metric{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:.875rem;}
+.mlbl{font-size:11px;color:var(--tx3);margin-bottom:.2rem;}
+.mnum{font-size:26px;font-weight:700;line-height:1;}
+.msub{font-size:11px;color:var(--tx3);margin-top:.1rem;}
+/* Section header */
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem;}
+.st{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;}
+/* Pipeline */
+.pbar{display:flex;height:7px;border-radius:4px;overflow:hidden;gap:2px;margin:8px 0;}
+.pseg{height:100%;border-radius:2px;transition:flex .4s;}
+.pleg{display:flex;gap:14px;flex-wrap:wrap;}
+.pitem{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--tx3);}
+.pdot{width:7px;height:7px;border-radius:50%;}
+/* Pills */
+.pill{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:500;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;}
+.pnew{background:rgba(108,99,255,.15);color:var(--acc2);}
+.papp{background:rgba(96,165,250,.12);color:var(--blu);}
+.prev{background:rgba(251,191,36,.1);color:var(--amb);}
+.pint{background:rgba(74,222,128,.1);color:var(--grn);}
+.prej{background:rgba(248,113,113,.1);color:var(--red);}
+.ppnd{background:rgba(167,139,250,.1);color:var(--pur);}
+.poff{background:rgba(74,222,128,.2);color:var(--grn);}
+/* Tabs */
+.tabs{display:flex;border-bottom:1px solid var(--bdr);margin-bottom:1.25rem;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.tab{padding:8px 14px;font-size:13px;cursor:pointer;color:var(--tx3);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:all .15s;flex-shrink:0;}
+.tab:hover{color:var(--tx2);}
+.tab.on{color:var(--tx);border-bottom-color:var(--acc);}
+/* Forms */
+.field{margin-bottom:.875rem;}
+.field label{display:block;font-size:12px;color:var(--tx3);margin-bottom:.35rem;font-weight:500;}
+.inp{width:100%;background:var(--sur);border:1px solid var(--bdr2);border-radius:8px;padding:9px 12px;color:var(--tx);font-size:13px;outline:none;font-family:inherit;transition:border-color .15s;}
+.inp:focus{border-color:var(--acc);}
+.inp::placeholder{color:var(--tx3);}
+textarea.inp{resize:vertical;min-height:120px;line-height:1.5;}
+.irow{display:flex;gap:8px;}
+/* Drop zone */
+.dz{border:1.5px dashed var(--bdr2);border-radius:var(--rl);padding:2.5rem 1.5rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--sur);}
+.dz:hover,.dz.drag{border-color:var(--acc);background:var(--glow);}
+.dz i{font-size:36px;color:var(--tx3);margin-bottom:.75rem;display:block;}
+.dz p{color:var(--tx2);font-size:14px;}
+.dz small{color:var(--tx3);font-size:12px;}
+/* Tags */
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:.5rem;}
+.tag{background:var(--sur2);border:1px solid var(--bdr);border-radius:6px;padding:3px 10px;font-size:12px;color:var(--tx2);}
+/* Keywords */
+.kwgrid{display:flex;flex-wrap:wrap;gap:6px;}
+.kw{font-size:12px;padding:4px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;}
+.kwm{background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.25);color:var(--grn);}
+.kwr{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);color:var(--amb);}
+.kwg{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);color:var(--red);}
+/* Job cards */
+.jtop{display:flex;align-items:flex-start;gap:11px;}
+.jlogo{width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;}
+.jtitle{font-size:14px;font-weight:600;margin-bottom:3px;}
+.jmeta{display:flex;gap:8px;flex-wrap:wrap;}
+.jmi{font-size:11px;color:var(--tx3);display:flex;align-items:center;gap:3px;}
+.jacts{margin-left:auto;display:flex;gap:6px;align-items:flex-start;flex-shrink:0;}
+.mrow{display:flex;align-items:center;gap:10px;margin-top:.75rem;}
+.mscore{font-size:12px;font-weight:700;min-width:34px;}
+.mtrack{flex:1;height:4px;background:var(--sur2);border-radius:2px;overflow:hidden;}
+.mfill{height:100%;border-radius:2px;}
+.mkw{font-size:11px;color:var(--tx3);margin-top:4px;}
+/* Career links */
+.clcard{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:.875rem 1rem;margin-bottom:8px;display:flex;align-items:center;gap:12px;}
+.cldot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.clb{flex:1;min-width:0;}
+.clname{font-size:13px;font-weight:500;}
+.clurl{font-size:11px;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.clstat{font-size:11px;color:var(--tx2);white-space:nowrap;}
+/* Profile */
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin:.875rem 0;}
+.pf .lbl{font-size:11px;color:var(--tx3);margin-bottom:2px;}
+.pf .val{font-size:13px;font-weight:500;}
+/* Chat */
+.cwrap{display:flex;flex-direction:column;height:calc(100vh - 130px);height:calc(100dvh - 130px);}
+.cmsgs{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:.25rem 0;}
+.msg{display:flex;gap:10px;align-items:flex-start;}
+.mav{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.mai .mav{background:var(--acc);}
+.mme .mav{background:var(--sur2);font-size:12px;color:var(--tx2);}
+.mbub{background:var(--sur);border:1px solid var(--bdr);border-radius:10px;padding:.75rem 1rem;font-size:13px;line-height:1.65;max-width:88%;}
+.mme{flex-direction:row-reverse;}
+.mme .mbub{background:var(--glow);border-color:rgba(108,99,255,.4);}
+.tdot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--tx3);animation:blink 1.2s infinite;margin:0 2px;}
+.tdot:nth-child(2){animation-delay:.2s;}.tdot:nth-child(3){animation-delay:.4s;}
+@keyframes blink{0%,80%,100%{opacity:.2;}40%{opacity:1;}}
+.cinrow{display:flex;gap:8px;padding-top:.875rem;border-top:1px solid var(--bdr);flex-shrink:0;}
+.cinrow textarea{flex:1;height:72px;background:var(--sur);border:1px solid var(--bdr2);border-radius:10px;padding:10px 13px;color:var(--tx);font-size:13px;font-family:inherit;resize:none;outline:none;line-height:1.5;}
+.cinrow textarea:focus{border-color:var(--acc);}
+.cinrow textarea::placeholder{color:var(--tx3);}
+/* Quick prompts */
+.qps{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.875rem;}
+.qp{font-size:12px;padding:5px 11px;border-radius:20px;border:1px solid var(--bdr);background:transparent;color:var(--tx2);cursor:pointer;transition:all .15s;}
+.qp:hover{border-color:var(--acc);color:var(--acc2);}
+/* Analysis */
+.ablock{margin-bottom:1.125rem;}
+.albl{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.625rem;display:flex;align-items:center;gap:5px;}
+.sugg{font-size:13px;color:var(--tx2);line-height:1.6;padding:.375rem 0 .375rem .875rem;border-left:2px solid var(--bdr2);margin-bottom:.375rem;}
+/* Insights */
+.insight{display:flex;gap:10px;align-items:flex-start;padding:.875rem 0;border-bottom:1px solid var(--bdr);}
+.insight:last-child{border-bottom:none;padding-bottom:0;}
+.iico{font-size:17px;color:var(--tx3);flex-shrink:0;margin-top:1px;}
+.itxt{font-size:13px;color:var(--tx2);line-height:1.55;}
+.itxt b{color:var(--tx);font-weight:500;}
+/* Empty */
+.empty{text-align:center;padding:3rem 1rem;color:var(--tx3);}
+.empty i{font-size:40px;margin-bottom:.875rem;display:block;opacity:.45;}
+.empty p{font-size:13px;line-height:1.6;}
+/* Toast */
+.tarea{position:fixed;bottom:1.5rem;right:1.5rem;display:flex;flex-direction:column;gap:8px;z-index:9999;pointer-events:none;}
+.toast{background:var(--sur);border:1px solid var(--bdr2);border-radius:10px;padding:.75rem 1rem;font-size:13px;display:flex;align-items:center;gap:8px;box-shadow:0 8px 32px rgba(0,0,0,.5);pointer-events:auto;animation:su .2s ease;}
+.tok{border-color:rgba(74,222,128,.4);color:var(--grn);}
+.terr{border-color:rgba(248,113,113,.4);color:var(--red);}
+.tinfo{border-color:rgba(96,165,250,.4);color:var(--blu);}
+@keyframes su{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+/* Loading */
+#ld{position:fixed;inset:0;background:rgba(10,10,15,.8);display:none;align-items:center;justify-content:center;flex-direction:column;gap:1rem;z-index:9998;backdrop-filter:blur(4px);}
+#ld.show{display:flex;}
+.spin{width:34px;height:34px;border:2px solid var(--bdr2);border-top-color:var(--acc);border-radius:50%;animation:sp .7s linear infinite;}
+@keyframes sp{to{transform:rotate(360deg);}}
+#ld p{color:var(--tx2);font-size:13px;}
+/* Modal */
+.mbg{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:9997;padding:1rem;}
+.mbg.show{display:flex;}
+.modal{background:var(--sur);border:1px solid var(--bdr2);border-radius:var(--rl);padding:1.5rem;max-width:420px;width:100%;}
+.modal h2{font-size:17px;font-weight:700;margin-bottom:.5rem;}
+.modal p{font-size:13px;color:var(--tx2);margin-bottom:1rem;line-height:1.6;}
+/* Hero */
+.hero{text-align:center;padding:2.5rem 1rem 2rem;max-width:520px;margin:0 auto;}
+.hero h1{font-size:26px;font-weight:700;margin-bottom:.5rem;letter-spacing:-.4px;}
+.hero h1 span{color:var(--acc2);}
+.hero p{color:var(--tx2);font-size:14px;margin-bottom:2rem;line-height:1.6;}
+.ssteps{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:2rem;}
+.sstep{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:1rem;}
+.sn{font-size:10px;font-weight:700;color:var(--acc2);letter-spacing:.06em;margin-bottom:.35rem;}
+.st2{font-size:13px;font-weight:600;margin-bottom:.2rem;}
+.sd{font-size:12px;color:var(--tx2);}
+/* Mobile nav */
+.mnav{display:none;background:var(--sur);border-top:1px solid var(--bdr);padding:.5rem .75rem calc(.5rem + env(safe-area-inset-bottom));flex-shrink:0;}
+.mnitems{display:flex;justify-content:space-around;}
+.mni{display:flex;flex-direction:column;align-items:center;gap:2px;padding:.375rem .5rem;border-radius:8px;border:none;background:none;cursor:pointer;color:var(--tx3);font-size:10px;min-width:44px;}
+.mni i{font-size:22px;}
+.mni.on{color:var(--acc2);}
+/* Scrollbar */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:2px;}
+/* Responsive */
+@media(max-width:700px){
+  .sidebar{display:none;}
+  .mnav{display:block;}
+  .pages{padding:1rem;}
+  .mhdr{padding:.75rem 1rem;}
+  .metrics{grid-template-columns:repeat(3,1fr);}
+  .pgrid{grid-template-columns:1fr;}
+  .irow{flex-wrap:wrap;}
+  .tarea{bottom:5.5rem;right:.75rem;left:.75rem;}
+  .toast{width:100%;}
+}
+@media(min-width:701px){.mnav{display:none;}}
+</style>
+</head>
+<body>
+
+<!-- API Modal -->
+<div class="mbg" id="mapi">
+  <div class="modal">
+    <h2>🔑 Add your Anthropic API key</h2>
+    <p>HuntAI uses Claude AI to parse resumes, match jobs, and align your resume to JDs. Your key is stored only in <em>your browser</em> and sent only to <code style="background:var(--sur2);padding:1px 5px;border-radius:4px;">api.anthropic.com</code>.</p>
+    <p>Get a free key → <a href="https://console.anthropic.com/account/keys" target="_blank" style="color:var(--acc2);">console.anthropic.com/account/keys</a></p>
+    <div class="field"><label>API Key</label><input class="inp" type="password" id="akinp" placeholder="sk-ant-api03-…" autocomplete="off"/></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn bp" onclick="saveKey()" style="flex:1;">Save & continue</button>
+      <button class="btn" onclick="closeM('mapi')">Later</button>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">🎯</div>
+      <div><div class="logo-name">HuntAI</div><div class="logo-tag">Job Hunt Agent</div></div>
+    </div>
+    <div class="nav-sec">
+      <div class="nav-lbl">workspace</div>
+      <button class="ni on" onclick="go('dash',this)"><i class="ti ti-layout-dashboard"></i>Dashboard</button>
+      <button class="ni" onclick="go('resume',this)"><i class="ti ti-file-cv"></i>My Profile</button>
+      <button class="ni" onclick="go('jobs',this)"><i class="ti ti-briefcase"></i>Find Jobs<span class="nbadge" id="nb1">0</span></button>
+      <button class="ni" onclick="go('align',this)"><i class="ti ti-adjustments-horizontal"></i>JD Aligner</button>
+      <button class="ni" onclick="go('track',this)"><i class="ti ti-chart-bar"></i>Tracker<span class="nbadge" id="nb2" style="background:var(--amb);">0</span></button>
+    </div>
+    <div style="margin-top:auto;">
+      <div class="nav-sec">
+        <button class="ni" onclick="go('agent',this)"><i class="ti ti-robot"></i>AI Agent</button>
+        <button class="ni" onclick="go('settings',this)"><i class="ti ti-settings"></i>Settings</button>
+      </div>
+    </div>
+    <div class="api-bar"><span class="adot" id="adot"></span><span id="astat">No API key</span></div>
+  </nav>
+
+  <!-- Main -->
+  <div class="main">
+    <header class="mhdr">
+      <div class="ptitle" id="ptitle">Dashboard</div>
+      <div class="hacts">
+        <button class="btn bs" onclick="go('agent',null)"><i class="ti ti-robot"></i>Ask AI</button>
+        <button class="btn bs bp" onclick="scanJobs()"><i class="ti ti-refresh"></i>Scan Jobs</button>
+      </div>
+    </header>
+
+    <main class="pages">
+
+      <!-- DASHBOARD -->
+      <div class="page on" id="pdash">
+        <div class="metrics">
+          <div class="metric"><div class="mlbl">Applied</div><div class="mnum" id="ma" style="color:var(--blu)">0</div><div class="msub">all time</div></div>
+          <div class="metric"><div class="mlbl">Reviewing</div><div class="mnum" id="mr" style="color:var(--amb)">0</div></div>
+          <div class="metric"><div class="mlbl">Interviews</div><div class="mnum" id="mi" style="color:var(--grn)">0</div></div>
+          <div class="metric"><div class="mlbl">Rejected</div><div class="mnum" id="mrej" style="color:var(--red)">0</div></div>
+          <div class="metric"><div class="mlbl">Offers 🎉</div><div class="mnum" id="mof" style="color:var(--grn)">0</div></div>
+        </div>
+        <div class="card">
+          <div class="st" style="margin-bottom:.75rem;">Pipeline</div>
+          <div class="pbar" id="pbar"><div class="pseg" style="flex:1;background:var(--bdr2);"></div></div>
+          <div class="pleg" id="pleg"><span class="pitem"><span class="pdot" style="background:var(--bdr2);"></span>No applications yet</span></div>
+        </div>
+        <div class="sh"><span class="st">Recent applications</span><button class="btn bs" onclick="go('track',null)">View all</button></div>
+        <div id="drecent"><div class="empty"><i class="ti ti-inbox"></i><p>No applications yet.<br>Set up your profile and scan for jobs.</p><button class="btn bp bs" style="margin-top:1rem;" onclick="go('resume',null)">Set up profile →</button></div></div>
+        <div id="dins" style="margin-top:1.25rem;display:none;">
+          <div class="sh"><span class="st">Agent insights</span></div>
+          <div class="card" id="dinscon"></div>
+        </div>
+      </div>
+
+      <!-- PROFILE -->
+      <div class="page" id="presume">
+        <div id="rsetup">
+          <div class="hero">
+            <h1>Build your <span>profile</span></h1>
+            <p>Paste your resume below. AI will extract your skills, experience, and domain to match you with the right jobs.</p>
+          </div>
+          <div class="ssteps">
+            <div class="sstep"><div class="sn">STEP 1</div><div class="st2">Paste resume</div><div class="sd">Plain text, any format</div></div>
+            <div class="sstep"><div class="sn">STEP 2</div><div class="st2">AI analyses</div><div class="sd">Extracts skills, seniority, domain</div></div>
+            <div class="sstep"><div class="sn">STEP 3</div><div class="st2">Get matched</div><div class="sd">Aligned job matches instantly</div></div>
+          </div>
+          <div class="dz" id="dz" onclick="document.getElementById('rf').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="dropFile(event)">
+            <i class="ti ti-file-upload"></i>
+            <p>Drop your resume or click to browse</p>
+            <small>TXT file — or paste text below</small>
+          </div>
+          <input type="file" id="rf" accept=".txt,.md" style="display:none" onchange="loadFile(this)"/>
+          <div style="margin:1rem 0;display:flex;align-items:center;gap:8px;color:var(--tx3);font-size:12px;"><div style="flex:1;height:1px;background:var(--bdr)"></div>or paste below<div style="flex:1;height:1px;background:var(--bdr)"></div></div>
+          <div class="field"><textarea class="inp" id="rtxt" style="height:200px;" placeholder="Paste your resume here — name, experience, skills, education, projects…"></textarea></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn bp" onclick="parseResume()"><i class="ti ti-sparkles"></i>Analyse with AI</button>
+            <button class="btn" onclick="loadSample()"><i class="ti ti-file-description"></i>Load sample</button>
+          </div>
+        </div>
+        <div id="rprofile" style="display:none;">
+          <div class="sh"><span class="st">Your profile</span><button class="btn bs" onclick="editProfile()"><i class="ti ti-edit"></i>Edit</button></div>
+          <div class="card">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem;">
+              <div style="width:50px;height:50px;border-radius:12px;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;flex-shrink:0;" id="pav">?</div>
+              <div><div style="font-size:16px;font-weight:700;" id="pname">—</div><div style="font-size:13px;color:var(--tx2);" id="prole">—</div></div>
+            </div>
+            <div class="pgrid">
+              <div class="pf"><div class="lbl">Experience</div><div class="val" id="pexp">—</div></div>
+              <div class="pf"><div class="lbl">Domain</div><div class="val" id="pdom">—</div></div>
+              <div class="pf"><div class="lbl">Location</div><div class="val" id="ploc">—</div></div>
+              <div class="pf"><div class="lbl">Seniority</div><div class="val" id="psen">—</div></div>
+            </div>
+            <div class="st" style="margin-bottom:6px;">Core Skills</div>
+            <div class="tags" id="pskills"></div>
+          </div>
+          <div class="card">
+            <div class="st" style="margin-bottom:.875rem;">Preferences</div>
+            <div class="irow" style="flex-wrap:wrap;">
+              <div class="field" style="flex:1;min-width:140px;"><label>Target role</label><input class="inp" id="prefr" placeholder="e.g. Senior Java Engineer"/></div>
+              <div class="field" style="flex:1;min-width:140px;"><label>Location</label><input class="inp" id="prefl" placeholder="e.g. Bangalore / Remote"/></div>
+            </div>
+            <div class="field"><label>Salary expectation</label><input class="inp" id="prefs" placeholder="e.g. ₹20-30 LPA" style="max-width:220px;"/></div>
+            <button class="btn bp bs" onclick="savePrefs()"><i class="ti ti-check"></i>Save preferences</button>
+          </div>
+          <div class="card"><div class="st" style="margin-bottom:.75rem;">AI summary</div><p id="psum" style="font-size:13px;color:var(--tx2);line-height:1.65;">—</p></div>
+        </div>
+      </div>
+
+      <!-- JOBS -->
+      <div class="page" id="pjobs">
+        <div class="sh"><span class="st">Job sources</span></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:1.25rem;">
+          <div class="clcard"><div class="cldot" style="background:#0077B5;"></div><div class="clb"><div class="clname">LinkedIn</div><div class="clstat" id="listat">Not scanned</div></div></div>
+          <div class="clcard"><div class="cldot" style="background:#003A9B;"></div><div class="clb"><div class="clname">Indeed</div><div class="clstat" id="instat">Not scanned</div></div></div>
+        </div>
+        <div class="sh"><span class="st">Career pages</span><button class="btn bs" onclick="toggleAddCL()"><i class="ti ti-plus"></i>Add link</button></div>
+        <div id="addc" style="display:none;margin-bottom:.875rem;">
+          <div class="irow" style="flex-wrap:wrap;">
+            <input class="inp" id="clu" type="url" placeholder="https://company.com/careers" style="flex:2;min-width:200px;"/>
+            <button class="btn bp bs" onclick="addCL()"><i class="ti ti-search"></i>Fetch jobs</button>
+            <button class="btn bs" onclick="toggleAddCL()"><i class="ti ti-x"></i></button>
+          </div>
+        </div>
+        <div id="cllist"></div>
+        <div class="sh" style="margin-top:1.25rem;">
+          <span class="st">Matched jobs</span>
+          <div style="display:flex;gap:6px;">
+            <button class="btn bs" onclick="renderJobs('all')">All</button>
+            <button class="btn bs" onclick="renderJobs('new')">New</button>
+            <button class="btn bs" onclick="renderJobs('high')">High match</button>
+          </div>
+        </div>
+        <div id="jlist"><div class="empty"><i class="ti ti-briefcase"></i><p>No jobs yet.<br>Click <strong>Scan Jobs</strong> after setting up your profile.</p></div></div>
+      </div>
+
+      <!-- JD ALIGNER -->
+      <div class="page" id="palign">
+        <div class="card" style="margin-bottom:1rem;">
+          <div class="st" style="margin-bottom:.875rem;">Paste a job description to analyse</div>
+          <div class="irow" style="flex-wrap:wrap;margin-bottom:.75rem;">
+            <input class="inp" id="jdtitle" placeholder="Job title (optional)" style="flex:1;min-width:130px;"/>
+            <input class="inp" id="jdco" placeholder="Company (optional)" style="flex:1;min-width:130px;"/>
+          </div>
+          <div class="field"><textarea class="inp" id="jdinp" style="height:160px;" placeholder="Paste the full job description here…"></textarea></div>
+          <button class="btn bp" onclick="analyseJD()"><i class="ti ti-sparkles"></i>Analyse alignment</button>
+        </div>
+        <div id="jdres" style="display:none;">
+          <div class="card">
+            <div class="ablock">
+              <div class="albl"><i class="ti ti-chart-pie" style="font-size:13px;"></i>Overall match</div>
+              <div style="display:flex;align-items:center;gap:14px;">
+                <div style="font-size:38px;font-weight:800;line-height:1;" id="jdscore">—</div>
+                <div style="flex:1;"><div class="mtrack" style="height:8px;"><div class="mfill" id="jdbar" style="width:0%;"></div></div><div style="font-size:12px;color:var(--tx3);margin-top:5px;" id="jdverd"></div></div>
+              </div>
+            </div>
+            <div class="ablock"><div class="albl"><i class="ti ti-check" style="font-size:13px;"></i>Skills you already have</div><div class="kwgrid" id="kwm"></div></div>
+            <div class="ablock"><div class="albl"><i class="ti ti-arrows-exchange" style="font-size:13px;"></i>Rephrase to their language (real skills, different wording)</div><div class="kwgrid" id="kwr"></div></div>
+            <div class="ablock"><div class="albl"><i class="ti ti-alert-triangle" style="font-size:13px;"></i>Genuine gaps — be honest about these</div><div class="kwgrid" id="kwg"></div></div>
+            <div class="ablock"><div class="albl"><i class="ti ti-file-text" style="font-size:13px;"></i>How to tailor your resume</div><div id="jdsugg"></div></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:.25rem;">
+              <button class="btn bp bs" onclick="addToTrack()"><i class="ti ti-plus"></i>Add to tracker</button>
+              <button class="btn bs" onclick="askAboutJD()"><i class="ti ti-robot"></i>Ask AI agent</button>
+              <button class="btn bs" onclick="genCover()"><i class="ti ti-mail"></i>Draft cover letter</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRACKER -->
+      <div class="page" id="ptrack">
+        <div class="tabs">
+          <div class="tab on" onclick="tTab('all',this)">All</div>
+          <div class="tab" onclick="tTab('applied',this)">Applied</div>
+          <div class="tab" onclick="tTab('reviewing',this)">Reviewing</div>
+          <div class="tab" onclick="tTab('interview',this)">Interview</div>
+          <div class="tab" onclick="tTab('offer',this)">Offer 🎉</div>
+          <div class="tab" onclick="tTab('rejected',this)">Rejected</div>
+        </div>
+        <div id="tlist"></div>
+      </div>
+
+      <!-- AGENT -->
+      <div class="page" id="pagent">
+        <div class="qps" id="qps">
+          <button class="qp" onclick="doQP('Write a cover letter for my most recent JD analysis')">✉️ Cover letter</button>
+          <button class="qp" onclick="doQP('What interview questions should I prep for based on my tracked interviews?')">🎤 Interview prep</button>
+          <button class="qp" onclick="doQP('Draft a professional follow-up email for pending applications')">📧 Follow-up email</button>
+          <button class="qp" onclick="doQP('Analyse my rejection pattern. What skills should I build?')">📊 Rejection analysis</button>
+          <button class="qp" onclick="doQP('What are the top keywords I should add to my resume based on current Java/Spring Boot job market?')">🔍 Resume keywords</button>
+          <button class="qp" onclick="doQP('Help me negotiate a job offer — what should I consider?')">💰 Offer negotiation</button>
+        </div>
+        <div class="cwrap">
+          <div class="cmsgs" id="cmsgs">
+            <div class="msg mai">
+              <div class="mav">🎯</div>
+              <div class="mbub">Hey Chandan! I'm your personal job hunt agent. I can:<br><br>
+                • <strong>Find jobs</strong> matching your Java/Spring Boot background<br>
+                • <strong>Align your resume</strong> to any JD — without lying<br>
+                • <strong>Draft cover letters</strong> tailored per role<br>
+                • <strong>Prep interview questions</strong> from the JD<br>
+                • <strong>Write follow-up emails</strong> for pending applications<br>
+                • <strong>Analyse your rejection patterns</strong><br><br>
+                Set up your profile first, then fire away!</div>
+            </div>
+          </div>
+          <div class="cinrow">
+            <textarea id="ainp" placeholder="Ask anything — 'draft a cover letter', 'prep me for tomorrow's interview', 'what's my response rate?'" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
+            <button class="btn bp" onclick="sendMsg()" style="align-self:flex-end;"><i class="ti ti-send"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="page" id="psettings">
+        <div class="card">
+          <div class="st" style="margin-bottom:.875rem;">API Configuration</div>
+          <div class="field"><label>Anthropic API Key</label><input class="inp" type="password" id="skey" placeholder="sk-ant-api03-…" autocomplete="off"/></div>
+          <p style="font-size:12px;color:var(--tx3);margin-bottom:.875rem;">Stored only in your browser's localStorage. Sent only to <code style="background:var(--sur2);padding:1px 5px;border-radius:3px;">api.anthropic.com</code>. Never logged anywhere.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn bp bs" onclick="saveKey2()"><i class="ti ti-check"></i>Save key</button>
+            <button class="btn bs bd" onclick="delKey()"><i class="ti ti-trash"></i>Remove</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="st" style="margin-bottom:.875rem;">Data management</div>
+          <p style="font-size:13px;color:var(--tx2);margin-bottom:.875rem;">All data is saved in your browser. Export to back up or move to another device.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn bs" onclick="exportD()"><i class="ti ti-download"></i>Export JSON</button>
+            <button class="btn bs" onclick="document.getElementById('impf').click()"><i class="ti ti-upload"></i>Import JSON</button>
+            <button class="btn bs bd" onclick="clearD()"><i class="ti ti-trash"></i>Clear all data</button>
+          </div>
+          <input type="file" id="impf" accept=".json" style="display:none" onchange="importD(this)"/>
+        </div>
+        <div class="card">
+          <div class="st" style="margin-bottom:.75rem;">About HuntAI</div>
+          <p style="font-size:13px;color:var(--tx2);line-height:1.7;">Version 1.0 · Built with Claude AI by Anthropic<br>Open source · Hosted on Vercel · Code on GitHub<br><br>A personal AI job hunt agent for resume parsing, JD keyword alignment, job search, and application tracking. All data stays on your device.</p>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Mobile nav -->
+    <nav class="mnav">
+      <div class="mnitems">
+        <button class="mni on" onclick="go('dash',this)"><i class="ti ti-layout-dashboard"></i>Home</button>
+        <button class="mni" onclick="go('resume',this)"><i class="ti ti-file-cv"></i>Profile</button>
+        <button class="mni" onclick="go('jobs',this)"><i class="ti ti-briefcase"></i>Jobs</button>
+        <button class="mni" onclick="go('track',this)"><i class="ti ti-chart-bar"></i>Track</button>
+        <button class="mni" onclick="go('agent',this)"><i class="ti ti-robot"></i>Agent</button>
+      </div>
+    </nav>
+  </div>
+</div>
+
+<div id="ld"><div class="spin"></div><p id="ldtxt">Thinking…</p></div>
+<div class="tarea" id="tarea"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const S={profile:null,prefs:{role:'',loc:'',salary:''},jobs:[],apps:[],cls:[],curJD:null};
+
+// ── Persist ────────────────────────────────────────────────────────────────
+function save(){try{localStorage.setItem('hai2',JSON.stringify({profile:S.profile,prefs:S.prefs,jobs:S.jobs,apps:S.apps,cls:S.cls}));}catch(e){}}
+function load(){
+  try{
+    const d=JSON.parse(localStorage.getItem('hai2')||'{}');
+    if(d.profile)S.profile=d.profile;if(d.prefs)S.prefs=d.prefs;
+    if(d.jobs)S.jobs=d.jobs;if(d.apps)S.apps=d.apps;if(d.cls)S.cls=d.cls;
+  }catch(e){}
+}
+
+// ── Nav ────────────────────────────────────────────────────────────────────
+const TITLES={dash:'Dashboard',resume:'My Profile',jobs:'Find Jobs',align:'JD Aligner',track:'Application Tracker',agent:'AI Agent',settings:'Settings'};
+function go(pg,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.ni,.mni').forEach(n=>n.classList.remove('on'));
+  const p=document.getElementById('p'+pg); if(p)p.classList.add('on');
+  if(el)el.classList.add('on');
+  document.getElementById('ptitle').textContent=TITLES[pg]||pg;
+  if(pg==='track')renderTracker('all');
+  if(pg==='resume'&&S.profile)showProfile();
+  if(pg==='jobs')renderCLs();
+  if(pg==='settings'){const k=localStorage.getItem('haikey')||'';if(k)document.getElementById('skey').value=k;}
+}
+
+// ── API ────────────────────────────────────────────────────────────────────
+async function ai(sys,usr){
+  const k=localStorage.getItem('haikey')||'';
+  if(!k){openM('mapi');throw new Error('No API key — please add one.');}
+  const r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1024,system:sys,messages:[{role:'user',content:usr}]})
+  });
+  if(!r.ok){const e=await r.json();throw new Error(e.error?.message||'API error '+r.status);}
+  const d=await r.json();
+  return d.content.map(b=>b.text||'').join('');
+}
+function updApiSt(){
+  const k=localStorage.getItem('haikey')||'';
+  document.getElementById('adot').className='adot'+(k?' ok':'');
+  document.getElementById('astat').textContent=k?'API key saved':'No API key';
+}
+function saveKey(){
+  const k=document.getElementById('akinp').value.trim();
+  if(!k.startsWith('sk-')){toast('Enter a valid key (starts with sk-)','err');return;}
+  localStorage.setItem('haikey',k);updApiSt();closeM('mapi');toast('API key saved!','ok');
+}
+function saveKey2(){
+  const k=document.getElementById('skey').value.trim();
+  if(!k.startsWith('sk-')){toast('Enter a valid key (starts with sk-)','err');return;}
+  localStorage.setItem('haikey',k);updApiSt();toast('API key saved!','ok');
+}
+function delKey(){if(!confirm('Remove API key?'))return;localStorage.removeItem('haikey');updApiSt();toast('Key removed','info');}
+
+// ── Resume ─────────────────────────────────────────────────────────────────
+const SAMPLE=`Chandan Kumar G
+Backend Software Engineer | Java · Spring Boot · Microservices
+Bengaluru, India | chandankumarg35@gmail.com | linkedin.com/in/chandan-kumar-g-142220196
+
+EXPERIENCE
+
+Software Engineer — TechCorp (2022–Present)
+• Built RESTful microservices with Spring Boot handling 1M+ requests/day
+• Designed MySQL schemas and optimised slow queries, reducing latency by 40%
+• Integrated Firebase Auth for real-time group chat and location sharing (EazyTripTrack)
+• Implemented CI/CD pipelines with GitHub Actions; containerised services with Docker
+• Collaborated in Agile/Scrum team of 8 engineers across 3-week sprints
+
+Junior Developer — StartupXYZ (2020–2022)
+• Developed Angular front-end components consuming Spring Boot REST APIs
+• Wrote JUnit/Mockito unit tests, achieving 80% code coverage
+• Participated in code reviews and maintained internal dev documentation
+
+SKILLS
+Java, Spring Boot, Spring MVC, REST APIs, Microservices, JUnit, Mockito
+Angular, TypeScript, HTML5, CSS3
+MySQL, Firebase (Firestore, Auth, Storage)
+Docker, Git, GitHub, GitHub Actions, Postman
+Agile, Scrum, IntelliJ IDEA, VS Code
+
+EDUCATION
+B.E. Computer Science — XYZ University (2020)
+
+PROJECTS
+EazyTripTrack — Real-time group location & chat app (Android + Firebase + Java)
+• Live group location sharing, group chat with media/document support
+• Firestore real-time listeners, Firebase Auth & Storage`;
+
+function loadSample(){document.getElementById('rtxt').value=SAMPLE;toast('Sample loaded','info');}
+function loadFile(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{document.getElementById('rtxt').value=e.target.result;toast('File loaded','info');};r.readAsText(f);}
+function dropFile(e){e.preventDefault();document.getElementById('dz').classList.remove('drag');const f=e.dataTransfer.files[0];if(f){const r=new FileReader();r.onload=ev=>{document.getElementById('rtxt').value=ev.target.result;toast('File loaded','info');};r.readAsText(f);}}
+
+async function parseResume(){
+  const txt=document.getElementById('rtxt').value.trim();
+  if(!txt){toast('Paste your resume first','err');return;}
+  ld('Parsing resume with AI…');
+  try{
+    const raw=await ai('You are a resume parser. Return ONLY valid JSON, no markdown, no extra text.',
+      `Parse this resume. Return JSON: {name,initials(2 chars),currentRole,experience("X years"),domain,location,seniority("Junior"/"Mid"/"Senior"/"Staff"/"Lead"),skills(array max 14),summary(2 clear sentences)}\n\nResume:\n${txt}`);
+    S.profile=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    save();showProfile();toast('Profile extracted!','ok');
+  }catch(e){toast(e.message,'err');}finally{hld();}
+}
+function showProfile(){
+  document.getElementById('rsetup').style.display='none';
+  document.getElementById('rprofile').style.display='block';
+  const p=S.profile;
+  document.getElementById('pav').textContent=p.initials||p.name?.substring(0,2)||'?';
+  document.getElementById('pname').textContent=p.name||'—';
+  document.getElementById('prole').textContent=p.currentRole||'—';
+  document.getElementById('pexp').textContent=p.experience||'—';
+  document.getElementById('pdom').textContent=p.domain||'—';
+  document.getElementById('ploc').textContent=p.location||'—';
+  document.getElementById('psen').textContent=p.seniority||'—';
+  document.getElementById('psum').textContent=p.summary||'—';
+  const sc=document.getElementById('pskills');sc.innerHTML='';
+  (p.skills||[]).forEach(s=>{const t=document.createElement('span');t.className='tag';t.textContent=s;sc.appendChild(t);});
+  document.getElementById('prefr').value=S.prefs.role||'';
+  document.getElementById('prefl').value=S.prefs.loc||'';
+  document.getElementById('prefs').value=S.prefs.salary||'';
+}
+function editProfile(){document.getElementById('rsetup').style.display='block';document.getElementById('rprofile').style.display='none';}
+function savePrefs(){S.prefs={role:document.getElementById('prefr').value,loc:document.getElementById('prefl').value,salary:document.getElementById('prefs').value};save();toast('Preferences saved','ok');}
+
+// ── Job Scan ───────────────────────────────────────────────────────────────
+async function scanJobs(){
+  if(!S.profile){toast('Set up your profile first','err');go('resume',null);return;}
+  ld('Scanning LinkedIn & Indeed for matching jobs…');
+  try{
+    const raw=await ai('You are a job search engine. Return ONLY a valid JSON array, no markdown.',
+      `Generate 8 realistic current job listings matching this candidate. JSON array, each: {id(unique string),title,company,location,remote(bool),source("LinkedIn" or "Indeed"),match(integer 60-96),keywords(array 4-5),jd("2-sentence JD summary of requirements"),status("new")}
+Candidate:${JSON.stringify(S.profile)}
+Prefs:${JSON.stringify(S.prefs)}`);
+    S.jobs=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    save();
+    const nb=document.getElementById('nb1');nb.textContent=S.jobs.length;nb.style.display='';
+    document.getElementById('listat').textContent=S.jobs.filter(j=>j.source==='LinkedIn').length+' found';
+    document.getElementById('instat').textContent=S.jobs.filter(j=>j.source==='Indeed').length+' found';
+    renderJobs('all');updateDash();toast(`Found ${S.jobs.length} matching jobs!`,'ok');
+  }catch(e){toast(e.message,'err');}finally{hld();}
+}
+function renderJobs(f){
+  const el=document.getElementById('jlist');
+  let list=S.jobs;
+  if(f==='new')list=list.filter(j=>j.status==='new');
+  if(f==='high')list=list.filter(j=>j.match>=80);
+  if(!list.length){el.innerHTML='<div class="empty"><i class="ti ti-briefcase"></i><p>No jobs match this filter.</p></div>';return;}
+  el.innerHTML=list.map(j=>{
+    const c=j.match>=75?'var(--grn)':j.match>=55?'var(--amb)':'var(--red)';
+    const done=S.apps.some(a=>a.jobId===j.id);
+    return`<div class="card" id="jc${j.id}">
+      <div class="jtop">
+        <div class="jlogo" style="background:${j.source==='LinkedIn'?'rgba(0,119,181,.15)':'rgba(0,58,155,.15)'};color:${j.source==='LinkedIn'?'var(--blu)':'var(--pur)'};">${j.company.substring(0,2).toUpperCase()}</div>
+        <div style="flex:1;min-width:0;">
+          <div class="jtitle">${j.title}</div>
+          <div class="jmeta">
+            <span class="jmi"><i class="ti ti-building"></i>${j.company}</span>
+            <span class="jmi"><i class="ti ti-map-pin"></i>${j.remote?'Remote':j.location}</span>
+            <span class="jmi"><i class="ti ti-${j.source==='LinkedIn'?'brand-linkedin':'search'}"></i>${j.source}</span>
+          </div>
+        </div>
+        <div class="jacts">${done?'<span class="pill papp">applied</span>':`<button class="btn bs bp" onclick="applyJob('${j.id}')"><i class="ti ti-send"></i>Apply</button>`}</div>
+      </div>
+      <div class="mrow">
+        <span class="mscore" style="color:${c}">${j.match}%</span>
+        <div class="mtrack"><div class="mfill" style="width:${j.match}%;background:${c};"></div></div>
+        <button class="btn bs" onclick="alignJob('${j.id}')" title="Align to this JD"><i class="ti ti-adjustments-horizontal"></i></button>
+      </div>
+      <div class="mkw">Matches: ${(j.keywords||[]).join(' · ')}</div>
+    </div>`;
+  }).join('');
+}
+function applyJob(id){
+  const j=S.jobs.find(x=>x.id===id);if(!j)return;
+  const app={id:'a'+Date.now(),jobId:j.id,title:j.title,company:j.company,source:j.source,status:'applied',match:j.match,date:now()};
+  S.apps.push(app);save();updateDash();
+  const c=document.getElementById('jc'+id);if(c)c.querySelector('.jacts').innerHTML='<span class="pill papp">applied</span>';
+  const nb=document.getElementById('nb2');nb.textContent=S.apps.length;nb.style.display='';
+  toast(`Applied to ${j.title} at ${j.company}!`,'ok');
+}
+function alignJob(id){
+  const j=S.jobs.find(x=>x.id===id);if(!j)return;
+  document.getElementById('jdtitle').value=j.title;
+  document.getElementById('jdco').value=j.company;
+  document.getElementById('jdinp').value=j.jd||'';
+  go('align',null);if(j.jd)analyseJD();
+}
+
+// ── Career Links ───────────────────────────────────────────────────────────
+function toggleAddCL(){const el=document.getElementById('addc');el.style.display=el.style.display==='none'?'block':'none';}
+async function addCL(){
+  const url=document.getElementById('clu').value.trim();
+  if(!url){toast('Enter a URL','err');return;}
+  let name='Company';try{name=new URL(url).hostname.replace('www.','').split('.')[0];name=name[0].toUpperCase()+name.slice(1);}catch(e){}
+  const cl={id:'cl'+Date.now(),name,url,status:'Scanning…'};
+  S.cls.push(cl);renderCLs();toggleAddCL();
+  ld(`Fetching jobs from ${name}…`);
+  try{
+    const raw=await ai('Return ONLY valid JSON array.',
+      `Generate 3 realistic job listings for "${name}" (${url}) matching this candidate. Array of: {id,title,company:"${name}",location,remote,source:"${name} Careers",match(55-90),keywords(array 4-5),jd("2 sentence summary"),status:"new"}
+Profile:${JSON.stringify(S.profile||{})}`);
+    const jobs=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    S.jobs.push(...jobs);save();cl.status=`${jobs.length} jobs found`;
+    renderCLs();renderJobs('all');
+    document.getElementById('nb1').textContent=S.jobs.length;document.getElementById('nb1').style.display='';
+    toast(`Found ${jobs.length} jobs at ${name}!`,'ok');
+  }catch(e){cl.status='Failed';renderCLs();toast('Could not fetch jobs','err');}
+  finally{hld();}
+}
+function removeCL(id){if(!confirm('Remove this link?'))return;S.cls=S.cls.filter(l=>l.id!==id);save();renderCLs();}
+function renderCLs(){
+  const el=document.getElementById('cllist');
+  if(!S.cls.length){el.innerHTML='<div class="empty" style="padding:1.5rem;"><i class="ti ti-link"></i><p>No career links yet.</p></div>';return;}
+  el.innerHTML=S.cls.map(l=>`<div class="clcard"><div class="cldot" style="background:var(--acc);"></div><div class="clb"><div class="clname">${l.name}</div><div class="clurl">${l.url}</div></div><div class="clstat">${l.status}</div><button class="btn bs" onclick="removeCL('${l.id}')" style="padding:4px 8px;"><i class="ti ti-trash" style="font-size:13px;"></i></button></div>`).join('');
+}
+
+// ── JD Aligner ─────────────────────────────────────────────────────────────
+async function analyseJD(){
+  const jd=document.getElementById('jdinp').value.trim();
+  if(!jd){toast('Paste a job description first','err');return;}
+  if(!S.profile){toast('Set up your profile first','err');go('resume',null);return;}
+  ld('Analysing keyword alignment…');
+  try{
+    const raw=await ai('You are a career coach. Be honest — never suggest fabricating skills. Return ONLY valid JSON.',
+      `Analyse alignment. Return JSON: {score(0-100),verdict(1 sentence),matched_keywords(array),rephrase_keywords(array of "JD term → your equivalent"),gap_keywords(array genuine missing skills),suggestions(array 3-4 actionable resume tips as plain strings)}
+Candidate:${JSON.stringify(S.profile)}
+JD:${jd}`);
+    const res=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    S.curJD={title:document.getElementById('jdtitle').value,company:document.getElementById('jdco').value,jd,res};
+    renderJDRes(res);
+  }catch(e){toast(e.message,'err');}finally{hld();}
+}
+function renderJDRes(r){
+  document.getElementById('jdres').style.display='block';
+  const c=r.score>=75?'var(--grn)':r.score>=55?'var(--amb)':'var(--red)';
+  document.getElementById('jdscore').textContent=r.score+'%';document.getElementById('jdscore').style.color=c;
+  document.getElementById('jdbar').style.cssText=`width:${r.score}%;background:${c};`;
+  document.getElementById('jdverd').textContent=r.verdict||'';
+  document.getElementById('kwm').innerHTML=(r.matched_keywords||[]).map(k=>`<span class="kw kwm"><i class="ti ti-check" style="font-size:12px;"></i>${k}</span>`).join('');
+  document.getElementById('kwr').innerHTML=(r.rephrase_keywords||[]).map(k=>`<span class="kw kwr"><i class="ti ti-arrows-exchange" style="font-size:12px;"></i>${k}</span>`).join('');
+  document.getElementById('kwg').innerHTML=(r.gap_keywords||[]).map(k=>`<span class="kw kwg"><i class="ti ti-x" style="font-size:12px;"></i>${k}</span>`).join('');
+  document.getElementById('jdsugg').innerHTML=(r.suggestions||[]).map(s=>`<div class="sugg">${s}</div>`).join('');
+  document.getElementById('jdres').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function addToTrack(){
+  if(!S.curJD){toast('Analyse a JD first','err');return;}
+  const app={id:'a'+Date.now(),jobId:null,title:S.curJD.title||'Untitled Role',company:S.curJD.company||'Unknown',source:'Manual',status:'new',match:S.curJD.res?.score||0,date:now()};
+  S.apps.push(app);save();updateDash();
+  const nb=document.getElementById('nb2');nb.textContent=S.apps.length;nb.style.display='';
+  toast('Added to tracker!','ok');
+}
+function askAboutJD(){
+  if(!S.curJD)return;
+  const q=`I analysed the ${S.curJD.title||'job'} role at ${S.curJD.company||'this company'}. My match score is ${S.curJD.res?.score||'?'}%. How should I best position myself for this role?`;
+  document.getElementById('ainp').value=q;go('agent',null);sendMsg();
+}
+async function genCover(){
+  if(!S.curJD){toast('Analyse a JD first','err');return;}
+  ld('Drafting cover letter…');
+  try{
+    const reply=await ai('You are an expert career coach. Write concise, professional, genuine cover letters. Never exaggerate. Be specific.',
+      `Write a cover letter (3 short paragraphs + clear call to action) for:
+Candidate:${JSON.stringify(S.profile)}
+Role:${S.curJD.title} at ${S.curJD.company}
+JD:${S.curJD.jd}
+Match:${JSON.stringify(S.curJD.res)}`);
+    go('agent',null);
+    appendMsg('me',`Draft cover letter for ${S.curJD.title} at ${S.curJD.company}`);
+    appendMsg('ai',reply);
+  }catch(e){toast(e.message,'err');}finally{hld();}
+}
+
+// ── Tracker ────────────────────────────────────────────────────────────────
+function tTab(f,el){document.querySelectorAll('.tabs .tab').forEach(t=>t.classList.remove('on'));el.classList.add('on');renderTracker(f);}
+function renderTracker(f){
+  const el=document.getElementById('tlist');
+  const list=f==='all'?S.apps:S.apps.filter(a=>a.status===f);
+  if(!list.length){el.innerHTML='<div class="empty"><i class="ti ti-list-check"></i><p>No applications here.</p></div>';return;}
+  el.innerHTML=[...list].reverse().map(a=>{
+    const c=a.match>=75?'var(--grn)':a.match>=55?'var(--amb)':'var(--red)';
+    return`<div class="card">
+      <div class="jtop">
+        <div class="jlogo" style="background:var(--sur2);color:var(--tx2);">${a.company.substring(0,2).toUpperCase()}</div>
+        <div style="flex:1;min-width:0;"><div class="jtitle">${a.title}</div><div class="jmeta"><span class="jmi"><i class="ti ti-building"></i>${a.company}</span><span class="jmi"><i class="ti ti-calendar"></i>${a.date}</span><span class="jmi"><i class="ti ti-database"></i>${a.source}</span></div></div>
+        <div class="jacts">
+          <select class="btn bs" onchange="updSt('${a.id}',this.value)">
+            ${['new','applied','reviewing','interview','offer','rejected','pending'].map(s=>`<option value="${s}"${s===a.status?' selected':''}>${s.charAt(0).toUpperCase()+s.slice(1)}</option>`).join('')}
+          </select>
+          <button class="btn bs" onclick="delApp('${a.id}')" style="padding:5px 7px;"><i class="ti ti-trash" style="font-size:13px;"></i></button>
+        </div>
+      </div>
+      <div class="mrow">
+        <span class="mscore" style="color:${c}">${a.match}%</span>
+        <div class="mtrack"><div class="mfill" style="width:${a.match}%;background:${c};"></div></div>
+        <button class="btn bs" onclick="followUp('${a.id}')"><i class="ti ti-mail"></i>Follow-up</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function updSt(id,st){const a=S.apps.find(x=>x.id===id);if(a){a.status=st;save();updateDash();}}
+function delApp(id){if(!confirm('Delete this application?'))return;S.apps=S.apps.filter(a=>a.id!==id);save();updateDash();renderTracker('all');}
+async function followUp(id){
+  const a=S.apps.find(x=>x.id===id);if(!a)return;
+  ld('Drafting follow-up email…');
+  try{
+    const reply=await ai('Write short, professional follow-up emails. Never be pushy.',
+      `Write a follow-up email (subject line + 3 sentences) for application submitted ${a.date}. Role: ${a.title} at ${a.company}. Format as "Subject: ...\n\n[body]"`);
+    go('agent',null);appendMsg('me',`Follow-up email for ${a.title} at ${a.company}`);appendMsg('ai',reply);
+  }catch(e){toast(e.message,'err');}finally{hld();}
+}
+
+// ── Dashboard ──────────────────────────────────────────────────────────────
+function updateDash(){
+  const apps=S.apps;
+  const ct={applied:0,reviewing:0,interview:0,rejected:0,pending:0,offer:0};
+  apps.forEach(a=>{if(a.status in ct)ct[a.status]++;else ct.applied++;});
+  const tot=apps.length;
+  document.getElementById('ma').textContent=tot;
+  document.getElementById('mr').textContent=ct.reviewing;
+  document.getElementById('mi').textContent=ct.interview;
+  document.getElementById('mrej').textContent=ct.rejected;
+  document.getElementById('mof').textContent=ct.offer;
+  if(tot>0){
+    const segs=[
+      {f:tot,c:'var(--blu)',l:`applied ${tot}`},
+      ct.reviewing?{f:ct.reviewing,c:'var(--amb)',l:`reviewing ${ct.reviewing}`}:null,
+      ct.interview?{f:ct.interview,c:'var(--grn)',l:`interview ${ct.interview}`}:null,
+      ct.rejected?{f:ct.rejected,c:'var(--red)',l:`rejected ${ct.rejected}`}:null,
+      ct.offer?{f:ct.offer,c:'#22c55e',l:`offer 🎉 ${ct.offer}`}:null,
+    ].filter(Boolean);
+    document.getElementById('pbar').innerHTML=segs.map(s=>`<div class="pseg" style="flex:${s.f};background:${s.c};"></div>`).join('');
+    document.getElementById('pleg').innerHTML=segs.map(s=>`<span class="pitem"><span class="pdot" style="background:${s.c}"></span>${s.l}</span>`).join('');
+  }
+  const dr=document.getElementById('drecent');
+  if(!apps.length){dr.innerHTML='<div class="empty"><i class="ti ti-inbox"></i><p>No applications yet.<br>Set up your profile and scan for jobs.</p><button class="btn bp bs" style="margin-top:1rem;" onclick="go(\'resume\',null)">Set up profile →</button></div>';return;}
+  dr.innerHTML=[...apps].reverse().slice(0,5).map(a=>`<div class="card"><div class="jtop"><div class="jlogo" style="background:var(--sur2);color:var(--tx2);font-size:12px;">${a.company.substring(0,2).toUpperCase()}</div><div style="flex:1;"><div class="jtitle" style="font-size:13px;">${a.title}</div><div style="font-size:11px;color:var(--tx3);">${a.company} · ${a.date}</div></div><span class="pill p${a.status.substring(0,3)}">${a.status}</span></div></div>`).join('');
+  if(apps.length>=3){
+    const rate=Math.round((ct.interview/tot)*100);
+    document.getElementById('dins').style.display='block';
+    document.getElementById('dinscon').innerHTML=`
+      <div class="insight"><i class="ti ti-trending-up iico"></i><div class="itxt">Interview rate: <b>${rate}%</b> — ${ct.interview} of ${tot} applications led to an interview.</div></div>
+      ${ct.rejected>=3?`<div class="insight"><i class="ti ti-bulb iico"></i><div class="itxt"><b>${ct.rejected} rejections</b> — ask the AI Agent to analyse your rejection pattern and suggest skills to build.</div></div>`:''}
+      ${tot>=5?`<div class="insight"><i class="ti ti-target iico"></i><div class="itxt">Consistency is key. Aim for <b>5-10 applications/week</b> for best pipeline throughput.</div></div>`:''}
+      ${ct.offer?`<div class="insight"><i class="ti ti-confetti iico"></i><div class="itxt">🎉 You have <b>${ct.offer} offer${ct.offer>1?'s':''}!</b> Ask the AI Agent to help you negotiate.</div></div>`:''}`;
+  }
+}
+
+// ── AI Agent ───────────────────────────────────────────────────────────────
+function doQP(msg){document.getElementById('ainp').value=msg;sendMsg();document.getElementById('qps').style.display='none';}
+async function sendMsg(){
+  const inp=document.getElementById('ainp');const msg=inp.value.trim();if(!msg)return;
+  inp.value='';document.getElementById('qps').style.display='none';
+  appendMsg('me',msg);appendTyping();
+  try{
+    const reply=await ai(
+      `You are a personal job hunt AI agent for Chandan, a Backend Engineer from Bengaluru (Java, Spring Boot, Microservices, Angular, MySQL, Firebase, Docker). Be concise, practical, and honest. Never suggest lying on a resume. Use bullet points where helpful.
+Profile:${S.profile?JSON.stringify(S.profile):'Not set up yet.'}
+Applications (${S.apps.length}):${JSON.stringify(S.apps.map(a=>({t:a.title,c:a.company,s:a.status,d:a.date})))}
+Prefs:${JSON.stringify(S.prefs)}`,
+      msg
+    );
+    rmTyping();appendMsg('ai',reply);
+  }catch(e){rmTyping();appendMsg('ai',e.message.includes('No API')?'Please add your Anthropic API key in Settings first.':'Something went wrong — try again.');}
+}
+function appendMsg(role,txt){
+  const el=document.getElementById('cmsgs');const d=document.createElement('div');
+  d.className=`msg m${role}`;
+  d.innerHTML=`<div class="mav">${role==='ai'?'🎯':'👤'}</div><div class="mbub">${txt.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>').replace(/•/g,'•')}</div>`;
+  el.appendChild(d);el.scrollTop=el.scrollHeight;
+}
+function appendTyping(){const el=document.getElementById('cmsgs');const d=document.createElement('div');d.className='msg mai';d.id='typing';d.innerHTML='<div class="mav">🎯</div><div class="mbub"><span class="tdot"></span><span class="tdot"></span><span class="tdot"></span></div>';el.appendChild(d);el.scrollTop=el.scrollHeight;}
+function rmTyping(){const t=document.getElementById('typing');if(t)t.remove();}
+
+// ── Data ───────────────────────────────────────────────────────────────────
+function exportD(){
+  const d={...S,exported:new Date().toISOString()};
+  const a=document.createElement('a');a.href='data:application/json,'+encodeURIComponent(JSON.stringify(d,null,2));a.download='huntai-backup.json';a.click();
+  toast('Exported!','ok');
+}
+function importD(inp){
+  const f=inp.files[0];if(!f)return;
+  const r=new FileReader();r.onload=e=>{
+    try{
+      const d=JSON.parse(e.target.result);
+      if(d.profile)S.profile=d.profile;if(d.prefs)S.prefs=d.prefs;
+      if(d.jobs)S.jobs=d.jobs;if(d.apps)S.apps=d.apps;if(d.cls)S.cls=d.cls;
+      save();updateDash();if(S.profile)showProfile();toast('Imported!','ok');
+    }catch{toast('Invalid file','err');}
+  };r.readAsText(f);
+}
+function clearD(){if(!confirm('Clear ALL data? Cannot be undone.'))return;localStorage.removeItem('hai2');S.profile=null;S.jobs=[];S.apps=[];S.cls=[];S.prefs={role:'',loc:'',salary:''};updateDash();toast('Cleared','info');}
+
+// ── Utils ──────────────────────────────────────────────────────────────────
+function ld(msg){document.getElementById('ldtxt').textContent=msg||'Thinking…';document.getElementById('ld').classList.add('show');}
+function hld(){document.getElementById('ld').classList.remove('show');}
+function toast(msg,type='ok'){
+  const a=document.getElementById('tarea');const d=document.createElement('div');d.className=`toast t${type}`;
+  const ico=type==='ok'?'check':type==='err'?'alert-circle':'info-circle';
+  d.innerHTML=`<i class="ti ti-${ico}" style="font-size:16px;"></i>${msg}`;
+  a.appendChild(d);setTimeout(()=>d.remove(),3500);
+}
+function openM(id){document.getElementById(id).classList.add('show');}
+function closeM(id){document.getElementById(id).classList.remove('show');}
+function now(){return new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}
+
+// ── PWA ────────────────────────────────────────────────────────────────────
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+load();updApiSt();updateDash();
+if(S.profile)showProfile();
+renderCLs();if(S.jobs.length)renderJobs('all');renderTracker('all');
+if(!localStorage.getItem('haikey'))setTimeout(()=>openM('mapi'),900);
+</script>
+</body>
+</html>
